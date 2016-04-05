@@ -43,6 +43,8 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.MyHolder> {
             public void onClick(View v) {
                 Intent intent = new Intent(mContext,ImageLoad.class);
                 intent.putExtra("url",linkk);
+                intent.putExtra("height",mHeight);
+                intent.putExtra("width",mWidth);
                 mContext.startActivity(intent);
             }
         });
