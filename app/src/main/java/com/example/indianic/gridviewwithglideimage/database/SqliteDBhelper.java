@@ -22,135 +22,108 @@ import java.util.ArrayList;
  */
 public class SqliteDBhelper extends SQLiteOpenHelper{
 
-    //The Android's default system path of your application database.
-    private static String DB_PATH = "/data/data/com.example.indianic.gridviewwithglideimage/databases/";
+    private Image image;
+    private ArrayList<Image> images;
+    private static String TAG = "SqliteDBhelper"; // Tag just for the LogCat window
+    //destination path (location) of our database on device
+    private static String DB_PATH = "";
+    private static String DB_NAME ="LiveWall.sqlite";// Database name
+    private SQLiteDatabase mDataBase;
+    private Context mContext;
 
-    private static String DB_NAME = "LiveWall";
-
-    private SQLiteDatabase myDataBase;
-
-    private final Context myContext;
-
-    /**
-     * Constructor
-     * Takes and keeps a reference of the passed context in order to access to the application assets and resources.
-     * @param context
-     */
     public SqliteDBhelper(Context context) {
 
-        super(context, DB_NAME, null, 1);
-        this.myContext = context;
+        super(context, DB_NAME, null, 1);// 1? Its database Version
+        if(android.os.Build.VERSION.SDK_INT >= 17){
+            DB_PATH = context.getApplicationInfo().dataDir + "/databases/";
+        }
+        else
+        {
+            DB_PATH = "/data/data/" + context.getPackageName() + "/databases/";
+        }
+        this.mContext = context;
     }
 
-    /**
-     * Creates a empty database on the system and rewrites it with your own database.
-     * */
-    public void createDataBase() throws IOException{
+    public void createDataBase() throws IOException
+    {
+        //If the database does not exist, copy it from the assets.
 
-        boolean dbExist = checkDataBase();
-
-        if(dbExist){
-            //do nothing - database already exist
-        }else{
-
-            //By calling this method and empty database will be created into the default system path
-            //of your application so we are gonna be able to overwrite that database with our database.
+        boolean mDataBaseExist = checkDataBase();
+        if(!mDataBaseExist)
+        {
             this.getReadableDatabase();
-
-            try {
+            this.close();
+            try
+            {
+                //Copy the database from assests
                 copyDataBase();
-
-            } catch (IOException e) {
-                Log.e("@@@@",e.getMessage());
-
+                Log.e(TAG, "createDatabase database created");
+            }
+            catch (IOException e)
+            {
+                Log.e("@EXP",e.getMessage());
             }
         }
-
     }
 
-    /**
-     * Check if the database already exist to avoid re-copying the file each time you open the application.
-     * @return true if it exists, false if it doesn't
-     */
-    private boolean checkDataBase(){
-
-        SQLiteDatabase checkDB = null;
-
-        try{
-            String myPath = DB_PATH + DB_NAME;
-            checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
-
-        }catch(SQLiteException e){
-
-            //database does't exist yet.
-
-        }
-
-        if(checkDB != null){
-
-            checkDB.close();
-
-        }
-
-        return checkDB != null ? true : false;
+    //Check that the database exists here: /data/data/your package/databases/Da Name
+    private boolean checkDataBase()
+    {
+        File dbFile = new File(DB_PATH + DB_NAME);
+        //Log.v("dbFile", dbFile + "   "+ dbFile.exists());
+        return dbFile.exists();
     }
-
-    /**
-     * Copies your database from your local assets-folder to the just created empty database in the
-     * system folder, from where it can be accessed and handled.
-     * This is done by transfering bytestream.
-     * */
-    private void copyDataBase() throws IOException{
-
-        //Open your local db as the input stream
-        InputStream myInput = myContext.getAssets().open("databases/"+DB_NAME);
-
-        // Path to the just created empty db
+    //Copy the database from assets
+    private void copyDataBase() throws IOException
+    {
+        InputStream mInput = mContext.getAssets().open("databases/"+DB_NAME);
         String outFileName = DB_PATH + DB_NAME;
-
-        //Open the empty db as the output stream
-        OutputStream myOutput = new FileOutputStream(outFileName);
-
-        //transfer bytes from the inputfile to the outputfile
-        byte[] buffer = new byte[1024];
-        int length;
-        while ((length = myInput.read(buffer))>0){
-            myOutput.write(buffer, 0, length);
+        OutputStream mOutput = new FileOutputStream(outFileName);
+        byte[] mBuffer = new byte[1024];
+        int mLength;
+        while ((mLength = mInput.read(mBuffer))>0)
+        {
+            mOutput.write(mBuffer, 0, mLength);
         }
-
-        //Close the streams
-        myOutput.flush();
-        myOutput.close();
-        myInput.close();
-
+        mOutput.flush();
+        mOutput.close();
+        mInput.close();
     }
 
-    public void openDataBase() throws SQLException{
-
-        //Open the database
-        String myPath = DB_PATH + DB_NAME;
-        myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
-        Cursor cursor = myDataBase.query("WallLinks Order BY RANDOM() LIMIT 1",
-                new String[] { "*" }, null, null, null, null, null);
-        if(cursor.getCount() > 0){
-            cursor.moveToFirst();
-            while(cursor.isAfterLast() == false){
-
-                Log.e("id111111",cursor.getInt(cursor.getColumnIndex("id"))+"");
-                cursor.moveToNext();
-            }
-        }
-
+    //Open the database, so we can query it
+    public boolean openDataBase() throws SQLException
+    {
+        String mPath = DB_PATH + DB_NAME;
+        //Log.v("mPath", mPath);
+        mDataBase = SQLiteDatabase.openDatabase(mPath, null, SQLiteDatabase.CREATE_IF_NECESSARY);
+        //mDataBase = SQLiteDatabase.openDatabase(mPath, null, SQLiteDatabase.NO_LOCALIZED_COLLATORS);
+        return mDataBase != null;
     }
 
     @Override
-    public synchronized void close() {
-
-        if(myDataBase != null)
-            myDataBase.close();
-
+    public synchronized void close()
+    {
+        if(mDataBase != null)
+            mDataBase.close();
         super.close();
+    }
 
+    public ArrayList<Image> getLinks(){
+        images = new ArrayList<>();
+        mDataBase = getReadableDatabase();
+        Cursor cursor = mDataBase.query("WallLinks",new String[]{"*"},"",null,null,null,"RANDOM()");
+        if(cursor.getCount() > 0){
+            Log.e("@@Cursur",cursor.getCount()+"");
+            cursor.moveToFirst();
+            do{
+                int i = cursor.getInt(cursor.getColumnIndex("id"));
+                String thumb = cursor.getString(cursor.getColumnIndex("thumb"));
+                String full = cursor.getString(cursor.getColumnIndex("full"));
+                image = new Image(i,thumb,full);
+                images.add(image);
+            }while (cursor.moveToNext());
+        }
+        return images;
     }
 
     @Override
@@ -162,10 +135,5 @@ public class SqliteDBhelper extends SQLiteOpenHelper{
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
     }
-
-
-    // Add your public helper methods to access and get content from the database.
-    // You could return cursors by doing "return myDataBase.query(....)" so it'd be easy
-    // to you to create adapters for your views.
 
 }

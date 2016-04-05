@@ -12,6 +12,9 @@ import android.widget.ImageView;
 import com.bumptech.glide.Glide;
 import com.example.indianic.gridviewwithglideimage.ImageLoad;
 import com.example.indianic.gridviewwithglideimage.R;
+import com.example.indianic.gridviewwithglideimage.model.Image;
+
+import java.util.ArrayList;
 
 /**
  * Created by indianic on 04/04/16.
@@ -20,7 +23,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.MyHolder> {
 
     private int mHeight,mWidth;
     private Context mContext;
-    private String[] mLinks;
+    private ArrayList<Image> mLinks;
     private LayoutInflater inflater;
 
 
@@ -32,13 +35,14 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.MyHolder> {
 
     @Override
     public void onBindViewHolder(final MyHolder holder, final int position) {
-        Glide.with(mContext).load(mLinks[position]).into(holder.imageView);
+        final String linkk = mLinks.get(position).getFull();
+        Glide.with(mContext).load(linkk).into(holder.imageView);
         Log.e("Position---", position + "");
         holder.imageView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(mContext,ImageLoad.class);
-                intent.putExtra("url",mLinks[position]);
+                intent.putExtra("url",linkk);
                 mContext.startActivity(intent);
             }
         });
@@ -46,7 +50,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.MyHolder> {
 
     @Override
     public int getItemCount() {
-        return mLinks.length;
+        return mLinks.size();
     }
 
     public class MyHolder extends RecyclerView.ViewHolder{
@@ -59,7 +63,7 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.MyHolder> {
         }
     }
 
-    public ImageAdapter(Context context,int height,int width,String[] links) {
+    public ImageAdapter(Context context,int height,int width,ArrayList<Image> links) {
         mContext = context;
         mLinks =links;
         mHeight = height;

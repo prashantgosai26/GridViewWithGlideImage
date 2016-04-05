@@ -9,9 +9,11 @@ import android.util.DisplayMetrics;
 
 import com.example.indianic.gridviewwithglideimage.adapter.ImageAdapter;
 import com.example.indianic.gridviewwithglideimage.database.SqliteDBhelper;
+import com.example.indianic.gridviewwithglideimage.model.Image;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -60,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private SqliteDBhelper database;
     private Application application;
+    private ArrayList<Image> images;
+    private SQLiteDatabase mDB;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,9 +72,12 @@ public class MainActivity extends AppCompatActivity {
         getWindowManager().getDefaultDisplay().getMetrics(displaymetrics);
         application = (Application) getApplication();
         database = application.getSqliteDBhelper();
+        images = new ArrayList<>();
         try {
             database.createDataBase();
             database.openDataBase();
+            images = database.getLinks();
+
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -82,6 +89,6 @@ public class MainActivity extends AppCompatActivity {
         RecyclerView.LayoutManager layoutManager = new GridLayoutManager(getApplicationContext(),2);
         recyclerView.setLayoutManager(layoutManager);
 
-        recyclerView.setAdapter(new ImageAdapter(this,height,width,newone));
+        recyclerView.setAdapter(new ImageAdapter(this,height,width,images));
     }
 }
